@@ -1,0 +1,12 @@
+-lib heaps
+-main Main
+-cp src
+
+--each
+
+-lib hlsdl
+-hl target/shooty.hl
+
+--next
+
+-js target/shooty.js
