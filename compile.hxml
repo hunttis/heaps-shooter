@@ -1,6 +1,7 @@
 -lib heaps
 -main Main
 -cp src
+-dce full
 
 --each
 

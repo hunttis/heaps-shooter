@@ -1,5 +1,6 @@
 package;
 
+import h2d.Scene;
 import h2d.col.RoundRect;
 import h2d.col.Bounds;
 import h2d.Tile;
@@ -8,37 +9,19 @@ import hxd.Key;
 
 class Main extends hxd.App {
 
-  var ammoTemplate: Tile;
-  var enemyTemplate: Tile;
+  var player: Player;
+  var ammo: Array<Shot> = [];
+  var enemies: Array<Enemy> = [];
 
-  var player: Bitmap;
-  var ammo: Array<Bitmap> = [];
-  var enemies: Array<Bitmap> = [];
-
-  var ammoCooldown: Float = 0;
   var enemyCooldown: Float = 2;
 
   override function init() {
-    var playerTemplate = h2d.Tile.fromColor(0xFF0000, 30, 30);
-    ammoTemplate = Tile.fromColor(0x00FF00, 10, 10);  
-    enemyTemplate = h2d.Tile.fromColor(0x0000FF, 40, 40);
-
-    player = new Bitmap(playerTemplate, s2d);
-    player.x = 200;
-    player.y = 400;
+    player = new Player(s2d, ammo);
   }
 
   override function update(dt: Float) {
-    if (Key.isDown(Key.UP)) {
-      player.y -= dt * 200;
-    } else if (Key.isDown(Key.DOWN)) {
-      player.y += dt * 200;
-    }
-    if (Key.isDown(Key.LEFT)) {
-      player.x -= dt * 200;
-    } else if (Key.isDown(Key.RIGHT)) {
-      player.x += dt * 200;
-    }
+
+    player.update(dt);
 
     if (Key.isDown(Key.ESCAPE)) {
       trace('QUIT');
@@ -47,46 +30,48 @@ class Main extends hxd.App {
       #end
     }
 
-    if (ammoCooldown >= 0) {
-      ammoCooldown -= dt;
-    }
-
     if (enemyCooldown >= 0) {
       enemyCooldown -= dt;
     }
 
     if (enemyCooldown < 0) {
-      var enemy = new Bitmap(enemyTemplate, s2d);
-      enemy.x = 20 + Math.random() * (s2d.width - 40);
+      var xLoc = 20 + Math.random() * (s2d.width - 40);
+      var enemy = new Enemy(s2d, ammo, xLoc);
+
       enemies.push(enemy);
       enemyCooldown = 1;
     }
 
-    if (Key.isDown(Key.SPACE) && ammoCooldown < 0) {
-      var shot = new Bitmap(ammoTemplate, s2d);
-      shot.x = player.x + player.getSize().width / 2 - shot.getSize().width / 2;
-      shot.y = player.y;
-      ammo.push(shot);
-      ammoCooldown = 0.5;
+    for(shot in ammo) {
+      shot.update(dt);
     }
 
-    for(shot in ammo) {
-      shot.y -= dt * 400;
+    for (enemy in enemies) {
+      enemy.update(dt);
+    }
 
+    checkShotCollisions();
+  }
+
+  private function checkShotCollisions() {
+    for (shot in ammo) {
       var destroyed = false;
 
-      var shotCollider = shot.getBounds();
-      
-      for (enemy in enemies) {
-        var enemyCollider = enemy.getBounds();
-        if (shotCollider.intersects(enemyCollider)) {
-          enemy.remove();
-          enemies.remove(enemy);
+      if (shot.friendly) {
+        for (enemy in enemies) {
+          if (enemy.collidesWith(shot)) {
+            enemy.remove();
+            enemies.remove(enemy);
+            destroyed = true;
+          }
+        }
+      } else if (!shot.friendly) {
+        if (player.collidesWith(shot)) {
           destroyed = true;
         }
       }
 
-      if (shot.y < 0) {
+      if (shot.y < 0 || shot.y > 1600) {
         destroyed = true;
       }
 
@@ -95,13 +80,9 @@ class Main extends hxd.App {
         ammo.remove(shot);
       }
     }
-
-    for (enemy in enemies) {
-      enemy.y += dt * 100;
-    }
   }
     
   static function main() {
-      new Main();
+    new Main();
   }
 }
