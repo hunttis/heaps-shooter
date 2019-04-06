@@ -10,8 +10,15 @@ class Player extends Bitmap{
   var ammoCooldown: Float = 0;
   var ammo: Array<Shot>;
 
+  var xSpeed: Float;
+  var ySpeed: Float;
+  var xAccelerationRate: Float = 100;
+  var yAccelerationRate: Float = 100;
+  var xSpeedMax: Float = 300;
+  var ySpeedMax: Float = 200;
+
   public function new(parent: Scene, ammo: Array<Shot>) {
-    super(Tile.fromColor(0xFF0000, 30, 30), parent);
+    super(Tile.fromColor(0xFF0000, 40, 20), parent);
     x = 200;
     y = 400;
     this.ammo = ammo;
@@ -24,15 +31,19 @@ class Player extends Bitmap{
     }
 
     if (Key.isDown(Key.UP)) {
-      y -= dt * 200;
+      ySpeed = Math.max(ySpeed - (yAccelerationRate), -ySpeedMax);
     } else if (Key.isDown(Key.DOWN)) {
-      y += dt * 200;
+      ySpeed = Math.min(ySpeed + (yAccelerationRate), ySpeedMax);
+    } else {
+      ySpeed = ySpeed * 0.8;
     }
 
     if (Key.isDown(Key.LEFT)) {
-      x -= dt * 200;
+      xSpeed = Math.max(xSpeed - (xAccelerationRate), -xSpeedMax);
     } else if (Key.isDown(Key.RIGHT)) {
-      x += dt * 200;
+      xSpeed = Math.min(xSpeed + (xAccelerationRate), xSpeedMax);
+    } else {
+      xSpeed = xSpeed * 0.8;
     }
 
     if (Key.isDown(Key.SPACE) && ammoCooldown < 0) {
@@ -41,10 +52,13 @@ class Player extends Bitmap{
       shot.y = y;
       ammo.push(shot);
       ammoCooldown = 0.5;
-    }    
+    }
+
+    y += ySpeed * dt;
+    x += xSpeed * dt;
   }
 
-  public function collidesWith(other: Bitmap) {
+  public function collidesWith(other: Bitmap): Bool {
     var collider = getBounds();
     var otherCollider = other.getBounds();
     return collider.intersects(otherCollider);
